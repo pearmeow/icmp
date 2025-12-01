@@ -9,7 +9,6 @@ import binascii
 
 # Dont worry about this method
 
-
 def checksum(string):
     csum = 0
     countTo = (len(string) / 2) * 2
@@ -33,7 +32,7 @@ def checksum(string):
     return answer
 
 
-def receiveOnePing(mySocket, ID, timeout, destAddr):
+def receiveOnePing(mySocket: socket.socket, ID: int, timeout: int, destAddr: str):
     time_left = timeout
     while 1:
         time_start = time.time()
@@ -75,14 +74,15 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
             return "Request timed out."
 
 
-def sendOnePing(mySocket, destAddr, ID):
+def sendOnePing(mySocket: socket.socket, destAddr: str, ID: int):
     # Header is type (8), code (8), checksum (16), id (16), sequence(16)
     myChecksum = 0
     # Make a dummy header with a 0 checksum
     # struct -- Interpret strings as packed binary data
 
     # Code Start
-
+    icmpEchoRequestType = 3
+    icmpEchoRequestCode = 3
     # Define icmpEchoRequestType and
     # icmpEchoRequestCode, which are both used below
     # Code End
@@ -106,15 +106,16 @@ def sendOnePing(mySocket, destAddr, ID):
     packet = header + data
 
     # AF_INET address must be tuple, not str
-    mySocket.sendto(packet, (destAddr, 1))
+    _ = mySocket.sendto(packet, (destAddr, 1))
 
 
-def doOnePing(destAddr, timeout):
+def doOnePing(destAddr: str, timeout: int):
     icmp = socket.getprotobyname("icmp")
     # SOCK_RAW is a powerful socket type.
     # For more details see: http://sock-raw.ord/papers/sock_raw
     # Code Start
     # Create Socket here
+    mySocket = socket.socket(AF_INET, SOCK_DGRAM)
     # Fill in end
 
     myID = os.getpid() & 0xFFFF  # Return the current process i
@@ -125,13 +126,15 @@ def doOnePing(destAddr, timeout):
     return delay
 
 
-def ping(host, timeout=1):
+def ping(host: str, timeout: int = 1):
     # timeout=1 means: If one second goes by without a reply from the server,
     # the client assumes that either the
     # client's ping or the server's pong is lost
     dest = socket.gethostbyname(host)
     print("Pinging " + dest + " using Python:\n")
     # Send ping requests to a server separated by approximately one second
+
+    delay = 0
     while 1:
         delay = doOnePing(dest, timeout)
         print(delay)
@@ -139,4 +142,4 @@ def ping(host, timeout=1):
     return delay
 
 
-ping("google.com")
+_ = ping("google.com")
