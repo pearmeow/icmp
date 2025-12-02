@@ -61,11 +61,8 @@ def receiveOnePing(mySocket: socket.socket, ID: int, timeout: int, destAddr: str
 
         # Code Start
         # Verify Type/Code is an ICMP echo reply
-        if (reqCode != 0 or reqType != 0 or packetID != ID):
+        if (reqCode == 0 and reqType == 0 and packetID == ID):
             # Code End
-            time_left = (time_received - time_start)
-            if time_left <= 0:
-                return "Request timed out."
 
             # Code Start
             # Extract the time in which the packet was sent
@@ -150,4 +147,4 @@ def ping(host: str, timeout: int = 1):
     return delay
 
 
-_ = ping("127.0.0.1")
+_ = ping("github.com")
