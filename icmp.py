@@ -46,27 +46,37 @@ def receiveOnePing(mySocket: socket.socket, ID: int, timeout: int, destAddr: str
 
         # Code Start
         # Receive the packet and address from the socket
+        packet, addr = mySocket.recvfrom(1024)
         # Code End
 
         # Code Start
         # Extract the ICMP header from the IP packet
+        header = packet[20:28];
         # Code End
 
         # Code Start
         # Use struct.unpack to get the data that was sent via thestruct.pack method below
+        reqType, reqCode, checksum, packetID, seqNum = struct.unpack("bbHHh", header);
         # Code End
 
         # Code Start
         # Verify Type/Code is an ICMP echo reply
-        # Code End
+        if (reqCode != 0 or reqType != 0 or packetID != ID):
+            # Code End
+            time_left = (time_received - time_start)
+            if time_left <= 0:
+                return "Request timed out."
 
-        # Code Start
-        # Extract the time in which the packet was sent
-        # Code End
+            # Code Start
+            # Extract the time in which the packet was sent
+            data = packet[28:]
+            time_sent, = struct.unpack("d", data);
+            # Code End
 
-        # Code Start
-        # Return the delay in ms: 1000 * (time received - time sent)
-        # Code End
+            # Code Start
+            # Return the delay in ms: 1000 * (time received - time sent)
+            return 1000 * (time_received - time_sent)
+            # Code End
 
         # If we got a response but it was not an ICMP echo reply
         time_left = (time_received - time_start)
@@ -81,14 +91,13 @@ def sendOnePing(mySocket: socket.socket, destAddr: str, ID: int):
     # struct -- Interpret strings as packed binary data
 
     # Code Start
-    icmpEchoRequestType = 3
-    icmpEchoRequestCode = 3
+    icmpEchoRequestType = 8
+    icmpEchoRequestCode = 0
     # Define icmpEchoRequestType and
     # icmpEchoRequestCode, which are both used below
     # Code End
 
-    header = struct.pack("bbHHh", icmpEchoRequestType,
-                         icmpEchoRequestCode, myChecksum, ID, 1)
+    header = struct.pack("bbHHh", icmpEchoRequestType, icmpEchoRequestCode, myChecksum, ID, 1)
 
     data = struct.pack("d", time.time())
     # Calculate the checksum on the data and the dummy header.
@@ -101,8 +110,7 @@ def sendOnePing(mySocket: socket.socket, destAddr: str, ID: int):
     else:
         myChecksum = socket.htons(myChecksum)
 
-    header = struct.pack("bbHHh", icmpEchoRequestType,
-                         icmpEchoRequestCode, myChecksum, ID, 1)
+    header = struct.pack("bbHHh", icmpEchoRequestType, icmpEchoRequestCode, myChecksum, ID, 1)
     packet = header + data
 
     # AF_INET address must be tuple, not str
@@ -115,7 +123,7 @@ def doOnePing(destAddr: str, timeout: int):
     # For more details see: http://sock-raw.ord/papers/sock_raw
     # Code Start
     # Create Socket here
-    mySocket = socket.socket(AF_INET, SOCK_DGRAM)
+    mySocket = socket.socket(AF_INET, SOCK_RAW, icmp)
     # Fill in end
 
     myID = os.getpid() & 0xFFFF  # Return the current process i
@@ -142,4 +150,4 @@ def ping(host: str, timeout: int = 1):
     return delay
 
 
-_ = ping("google.com")
+_ = ping("127.0.0.1")
